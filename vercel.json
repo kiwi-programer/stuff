@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "builds": [
     { "src": "pixel-medics.html", "use": "@vercel/static" }
   ],
