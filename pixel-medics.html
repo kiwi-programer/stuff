@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PIXEL MEDICS — Retro Game Repair</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&family=Orbitron:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --void: #0B001A;
+  --deep: #1A0033;
+  --plasma: #00F0FF;
+  --hot: #FF007F;
+  --charge: #FFEE00;
+  --glow-c: 0 0 8px #00F0FF, 0 0 24px rgba(0,240,255,0.45);
+  --glow-h: 0 0 8px #FF007F, 0 0 24px rgba(255,0,127,0.45);
+  --glow-y: 0 0 8px #FFEE00, 0 0 24px rgba(255,238,0,0.45);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+
+body {
+  background:var(--void);
+  color:#fff;
+  font-family:'Share Tech Mono',monospace;
+  overflow-x:hidden;
+}
+
+/* GLOBAL CRT SCANLINES */
+body::before {
+  content:'';
+  position:fixed;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.07) 3px,rgba(0,0,0,0.07) 4px);
+  pointer-events:none;z-index:9998;
+}
+@keyframes flicker{0%,96%,100%{opacity:1}97%{opacity:0.96}98%{opacity:1}99%{opacity:0.97}}
+body{animation:flicker 14s infinite}
+
+section[id]{scroll-margin-top:80px}
+
+/* ── NAV ────────────────────────────── */
+nav {
+  position:fixed;top:0;left:0;right:0;z-index:500;
+  padding:16px 60px;
+  display:flex;align-items:center;justify-content:space-between;
+  background:rgba(11,0,26,0.94);
+  backdrop-filter:blur(10px);
+  border-bottom:1px solid rgba(0,240,255,0.08);
+  transition:border-color .3s;
+}
+.nav-logo {
+  font-family:'Press Start 2P',monospace;
+  font-size:13px;line-height:1.5;
+  color:var(--plasma);text-shadow:var(--glow-c);
+  text-decoration:none;letter-spacing:1px;
+}
+.nav-logo em{color:var(--hot);text-shadow:var(--glow-h);font-style:normal}
+.nav-links{list-style:none;display:flex;gap:36px}
+.nav-links a {
+  font-family:'Orbitron',sans-serif;
+  font-size:10px;font-weight:600;letter-spacing:2px;
+  color:rgba(255,255,255,0.5);text-decoration:none;text-transform:uppercase;
+  transition:color .2s,text-shadow .2s;
+}
+.nav-links a:hover{color:var(--plasma);text-shadow:var(--glow-c)}
+.nav-btn {
+  font-family:'Press Start 2P',monospace;font-size:9px;
+  color:var(--void);background:var(--plasma);
+  padding:11px 20px;text-decoration:none;
+  clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,8px 100%,0 calc(100% - 8px));
+  box-shadow:var(--glow-c);transition:all .2s;
+}
+.nav-btn:hover{background:var(--charge);box-shadow:var(--glow-y)}
+
+/* ── HERO ───────────────────────────── */
+.hero {
+  min-height:100vh;
+  display:grid;grid-template-columns:1fr 1fr;align-items:center;gap:40px;
+  padding:130px 60px 80px;
+  position:relative;overflow:hidden;
+}
+
+/* Outrun grid floor */
+.hero::before {
+  content:'';
+  position:absolute;bottom:-8%;left:-25%;right:-25%;height:52%;
+  background-image:
+    linear-gradient(rgba(0,240,255,0.11) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,240,255,0.11) 1px,transparent 1px);
+  background-size:50px 50px;
+  transform:perspective(560px) rotateX(72deg);
+  transform-origin:top center;
+  mask-image:linear-gradient(to top,rgba(0,0,0,0.75) 0%,transparent 100%);
+}
+
+/* Starfield */
+.hero::after {
+  content:'';
+  position:absolute;inset:0;pointer-events:none;
+  background:
+    radial-gradient(1px 1px at 8% 18%,rgba(255,255,255,.7) 0%,transparent 100%),
+    radial-gradient(1px 1px at 22% 72%,rgba(0,240,255,.9) 0%,transparent 100%),
+    radial-gradient(1.5px 1.5px at 40% 11%,rgba(255,255,255,.5) 0%,transparent 100%),
+    radial-gradient(1px 1px at 58% 83%,rgba(255,0,127,.8) 0%,transparent 100%),
+    radial-gradient(1px 1px at 78% 35%,rgba(255,255,255,.6) 0%,transparent 100%),
+    radial-gradient(1.5px 1.5px at 90% 60%,rgba(0,240,255,.5) 0%,transparent 100%),
+    radial-gradient(1px 1px at 12% 88%,rgba(255,238,0,.5) 0%,transparent 100%),
+    radial-gradient(1px 1px at 67% 7%,rgba(255,255,255,.4) 0%,transparent 100%),
+    radial-gradient(1px 1px at 33% 46%,rgba(255,0,127,.4) 0%,transparent 100%),
+    radial-gradient(1px 1px at 52% 28%,rgba(255,255,255,.3) 0%,transparent 100%),
+    radial-gradient(1px 1px at 85% 90%,rgba(255,238,0,.3) 0%,transparent 100%),
+    radial-gradient(1px 1px at 4% 50%,rgba(0,240,255,.4) 0%,transparent 100%);
+}
+
+.hero-glow {position:absolute;pointer-events:none;border-radius:50%}
+.hero-glow.a{width:500px;height:500px;background:radial-gradient(circle,rgba(255,0,127,.07) 0%,transparent 60%);top:-120px;right:-80px}
+.hero-glow.b{width:400px;height:400px;background:radial-gradient(circle,rgba(0,240,255,.05) 0%,transparent 60%);bottom:0;left:-40px}
+
+.hero-left{position:relative;z-index:2}
+.hero-eyebrow {
+  font-family:'Orbitron',sans-serif;
+  font-size:9px;font-weight:700;letter-spacing:4px;
+  color:var(--hot);text-shadow:var(--glow-h);
+  margin-bottom:28px;
+  display:flex;align-items:center;gap:12px;
+}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.hero-eyebrow::before{content:'►';animation:blink 1s step-end infinite;font-size:10px}
+
+/* GLITCH HEADLINE */
+.glitch-line {
+  font-family:'Press Start 2P',monospace;
+  font-size:clamp(22px,3.8vw,50px);
+  line-height:1.55;
+  display:block;position:relative;
+}
+.glitch-line.c{color:var(--plasma);text-shadow:var(--glow-c)}
+.glitch-line.h{color:var(--hot);text-shadow:var(--glow-h)}
+
+.glitch-line::before,.glitch-line::after {
+  content:attr(data-text);
+  position:absolute;top:0;left:0;width:100%;
+  font-family:'Press Start 2P',monospace;
+  font-size:clamp(22px,3.8vw,50px);
+  line-height:1.55;
+  opacity:0;
+}
+.glitch-line.c::before{color:var(--hot);animation:ga 10s 1s infinite}
+.glitch-line.c::after{color:var(--charge);animation:gb 10s 1s infinite}
+.glitch-line.h::before{color:var(--plasma);animation:gc 13s 3s infinite}
+.glitch-line.h::after{color:var(--charge);animation:gd 13s 3s infinite}
+
+@keyframes ga{0%,90%,100%{opacity:0;transform:translate(0)}
+  91%{opacity:1;clip-path:inset(15% 0 70% 0);transform:translate(-4px,2px)}
+  92%{opacity:1;clip-path:inset(60% 0 5% 0);transform:translate(4px,-2px)}
+  93%{opacity:0}}
+@keyframes gb{0%,90%,100%{opacity:0;transform:translate(0)}
+  91%{opacity:1;clip-path:inset(50% 0 20% 0);transform:translate(3px,1px)}
+  92%{opacity:1;clip-path:inset(5% 0 80% 0);transform:translate(-3px,-1px)}
+  93%{opacity:0}}
+@keyframes gc{0%,87%,100%{opacity:0;transform:translate(0)}
+  88%{opacity:1;clip-path:inset(30% 0 55% 0);transform:translate(5px,-2px)}
+  89%{opacity:1;clip-path:inset(65% 0 10% 0);transform:translate(-5px,2px)}
+  90%{opacity:0}}
+@keyframes gd{0%,87%,100%{opacity:0;transform:translate(0)}
+  88%{opacity:1;clip-path:inset(0 0 75% 0);transform:translate(-3px,3px)}
+  89%{opacity:1;clip-path:inset(80% 0 0 0);transform:translate(3px,-3px)}
+  90%{opacity:0}}
+
+.hero-sub {
+  font-size:15px;line-height:1.9;
+  color:rgba(255,255,255,.6);
+  max-width:460px;margin:28px 0 46px;
+}
+.hero-actions{display:flex;gap:20px;align-items:center;flex-wrap:wrap}
+
+@keyframes coin-pulse{
+  0%,100%{box-shadow:0 0 10px #FFEE00,0 0 20px rgba(255,238,0,.3)}
+  50%{box-shadow:0 0 22px #FFEE00,0 0 55px rgba(255,238,0,.4),0 0 90px rgba(255,238,0,.12)}
+}
+.btn-coin {
+  font-family:'Press Start 2P',monospace;font-size:9px;
+  color:var(--void);background:var(--charge);
+  padding:16px 24px;text-decoration:none;
+  clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px));
+  animation:coin-pulse 2.5s ease-in-out infinite;
+  display:inline-flex;align-items:center;gap:10px;
+  transition:background .2s;
+}
+.btn-coin:hover{background:var(--plasma);animation:none;box-shadow:var(--glow-c)}
+.coin{width:14px;height:14px;border-radius:50%;background:var(--void);border:2px solid currentColor;flex-shrink:0}
+
+.btn-ghost {
+  font-family:'Orbitron',sans-serif;font-size:10px;font-weight:700;
+  letter-spacing:2px;text-transform:uppercase;
+  color:var(--plasma);text-decoration:none;
+  padding:16px 0;border-bottom:2px solid var(--plasma);
+  transition:all .2s;
+}
+.btn-ghost:hover{color:var(--hot);border-color:var(--hot)}
+
+/* ── HERO CRT MONITOR ───────────────── */
+.hero-right{position:relative;z-index:2;display:flex;justify-content:center}
+
+.monitor{width:min(360px,90%);filter:drop-shadow(0 0 40px rgba(0,240,255,.18)) drop-shadow(0 30px 60px rgba(0,0,0,.8))}
+.monitor-body{background:#18002e;border:3px solid #2e0f52;border-radius:14px;overflow:hidden}
+.monitor-topbar {
+  background:rgba(0,0,0,.5);border-bottom:1px solid rgba(0,240,255,.06);
+  padding:8px 14px;display:flex;align-items:center;justify-content:space-between;
+}
+.monitor-title{font-family:'Share Tech Mono',monospace;font-size:10px;color:rgba(0,240,255,.4)}
+.monitor-dots{display:flex;gap:6px}
+.mdot{width:9px;height:9px;border-radius:50%}
+.mdot.r{background:var(--hot);box-shadow:0 0 6px var(--hot)}
+.mdot.y{background:var(--charge);box-shadow:0 0 6px var(--charge)}
+.mdot.g{background:#00ff88;box-shadow:0 0 6px #00ff88;animation:blink 2.5s ease-in-out infinite}
+
+.monitor-screen{background:#04000d;aspect-ratio:4/3;position:relative;overflow:hidden}
+.monitor-screen::before {
+  content:'';position:absolute;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.22) 3px,rgba(0,0,0,.22) 4px);
+  pointer-events:none;z-index:3;
+}
+.monitor-screen::after {
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 40%,rgba(0,240,255,.07) 0%,transparent 65%);
+  box-shadow:inset 0 0 45px rgba(0,0,0,.75);
+  pointer-events:none;z-index:2;
+}
+.screen-inner {
+  padding:18px;position:relative;z-index:1;
+  font-family:'Share Tech Mono',monospace;
+  font-size:11px;line-height:1.75;color:var(--plasma);
+}
+.sl{margin-bottom:2px}
+.sl.y{color:var(--charge)}.sl.p{color:var(--hot)}.sl.w{color:#fff}.sl.d{color:rgba(0,240,255,.4)}
+.sc{display:inline-block;width:8px;height:12px;background:var(--plasma);animation:blink .75s step-end infinite;vertical-align:middle;margin-left:2px}
+
+.monitor-bottombar {
+  background:#0e001e;border-top:1px solid rgba(255,255,255,.04);
+  padding:10px 14px;display:flex;align-items:center;justify-content:flex-end;gap:8px;
+}
+.ctrl{width:13px;height:13px;border-radius:50%}
+.ctrl.c{background:var(--plasma);box-shadow:0 0 6px var(--plasma)}
+.ctrl.m{background:var(--hot);box-shadow:0 0 6px var(--hot)}
+.ctrl.y{background:var(--charge);box-shadow:0 0 6px var(--charge)}
+
+.monitor-neck{width:80px;height:20px;background:linear-gradient(to bottom,#18002e,#0e001e);border:2px solid #2e0f52;border-top:none;margin:0 auto}
+.monitor-base{width:200px;height:14px;background:#10001f;border:2px solid #2e0f52;border-radius:0 0 10px 10px;margin:0 auto}
+
+/* Pixel art floaters */
+@keyframes float-a{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-18px) rotate(3deg)}}
+@keyframes float-b{0%,100%{transform:translateY(0) rotate(5deg)}50%{transform:translateY(-14px) rotate(-5deg)}}
+.pfloat{position:absolute;pointer-events:none}
+.pfloat.a{bottom:22%;right:4%;animation:float-a 7s ease-in-out infinite;opacity:.18}
+.pfloat.b{top:32%;left:3%;animation:float-b 9s ease-in-out 2s infinite;opacity:.13}
+
+/* ── MARQUEE ────────────────────────── */
+.marquee-band {
+  background:var(--hot);overflow:hidden;
+  border-top:2px solid rgba(255,255,255,.15);
+  border-bottom:2px solid rgba(255,255,255,.15);
+}
+.marquee-track{display:flex;width:max-content}
+@keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.marquee-track{animation:marquee 40s linear infinite}
+.mq{font-family:'Press Start 2P',monospace;font-size:9px;letter-spacing:2px;color:var(--void);padding:13px 30px;white-space:nowrap}
+.ms{color:rgba(11,0,26,.4)}
+
+/* ── SHARED SECTION ─────────────────── */
+section{padding:100px 60px}
+
+.s-lbl {
+  font-family:'Orbitron',sans-serif;
+  font-size:9px;font-weight:700;letter-spacing:4px;text-transform:uppercase;
+  color:var(--plasma);text-shadow:var(--glow-c);
+  margin-bottom:14px;display:flex;align-items:center;gap:12px;
+}
+.s-lbl::before{content:'';width:28px;height:2px;background:var(--plasma);box-shadow:var(--glow-c)}
+
+.s-title{font-family:'Press Start 2P',monospace;font-size:clamp(16px,2.8vw,30px);line-height:1.6;margin-bottom:14px}
+.s-sub{font-size:14px;color:rgba(255,255,255,.55);line-height:1.9;max-width:540px;margin-bottom:56px}
+
+/* Pixel divider */
+.pdiv{height:4px;background:repeating-linear-gradient(90deg,var(--plasma) 0,var(--plasma) 8px,transparent 8px,transparent 16px,var(--hot) 16px,var(--hot) 24px,transparent 24px,transparent 32px,var(--charge) 32px,var(--charge) 40px,transparent 40px,transparent 48px);opacity:.35}
+
+/* ── SERVICES ───────────────────────── */
+#services{background:var(--void);position:relative}
+#services::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--plasma),transparent)}
+
+.svc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+
+.cart {
+  background:var(--deep);border:1px solid rgba(0,240,255,.13);
+  position:relative;overflow:hidden;
+  clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px));
+  transition:transform .3s,box-shadow .3s,border-color .3s;
+  cursor:default;
+}
+.cart:hover{transform:translateY(-8px)}
+.cart:nth-child(1):hover{border-color:var(--plasma);box-shadow:0 20px 60px rgba(0,240,255,.13)}
+.cart:nth-child(2):hover{border-color:var(--hot);box-shadow:0 20px 60px rgba(255,0,127,.13)}
+.cart:nth-child(3):hover{border-color:var(--charge);box-shadow:0 20px 60px rgba(255,238,0,.13)}
+.cart:nth-child(4):hover{border-color:rgba(0,240,255,.6);box-shadow:0 20px 60px rgba(0,240,255,.1)}
+
+.cart-ridge{height:28px;background:var(--void);border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:flex-end;justify-content:center}
+.cart-notch{width:56px;height:18px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-top:none;border-radius:0 0 4px 4px}
+
+.cart-body{padding:26px}
+.cart-sku{font-family:'Orbitron',sans-serif;font-size:8px;font-weight:600;letter-spacing:3px;color:rgba(255,255,255,.18);margin-bottom:10px}
+.cart-icon{font-size:36px;display:block;margin-bottom:18px;line-height:1}
+.cart-name{font-family:'Press Start 2P',monospace;font-size:11px;line-height:1.7;margin-bottom:14px}
+.cart:nth-child(1) .cart-name{color:var(--plasma);text-shadow:0 0 12px rgba(0,240,255,.4)}
+.cart:nth-child(2) .cart-name{color:var(--hot);text-shadow:0 0 12px rgba(255,0,127,.4)}
+.cart:nth-child(3) .cart-name{color:var(--charge);text-shadow:0 0 12px rgba(255,238,0,.4)}
+.cart:nth-child(4) .cart-name{color:var(--plasma);text-shadow:0 0 12px rgba(0,240,255,.4)}
+.cart-desc{font-size:12px;color:rgba(255,255,255,.55);line-height:1.85;margin-bottom:20px}
+.cart-price{font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;color:rgba(255,255,255,.35);letter-spacing:1px}
+.cart-price strong{color:var(--charge);font-size:17px;font-weight:900}
+.cart-strip{height:6px;background:repeating-linear-gradient(90deg,rgba(255,255,255,.04) 0,rgba(255,255,255,.04) 4px,transparent 4px,transparent 8px)}
+
+/* ── STATS ──────────────────────────── */
+#stats{background:var(--deep);padding:80px 60px;position:relative;overflow:hidden}
+#stats::before{content:'HIGH SCORE';position:absolute;font-family:'Press Start 2P',monospace;font-size:100px;color:rgba(255,255,255,.018);top:50%;left:50%;transform:translate(-50%,-50%);white-space:nowrap;pointer-events:none;user-select:none}
+
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:32px;position:relative;z-index:1}
+.stat-box{text-align:center;padding:40px 20px;border:1px solid rgba(0,240,255,.1);position:relative;transition:border-color .3s}
+.stat-box:hover{border-color:rgba(0,240,255,.3)}
+.stat-box::before{content:'';position:absolute;top:-1px;left:20%;right:20%;height:2px}
+.stat-box:nth-child(1)::before{background:var(--plasma);box-shadow:var(--glow-c)}
+.stat-box:nth-child(2)::before{background:var(--hot);box-shadow:var(--glow-h)}
+.stat-box:nth-child(3)::before{background:var(--charge);box-shadow:var(--glow-y)}
+.stat-box:nth-child(4)::before{background:var(--plasma);box-shadow:var(--glow-c)}
+
+.stat-num{font-family:'Press Start 2P',monospace;font-size:clamp(26px,3.5vw,44px);display:block;margin-bottom:14px}
+.stat-box:nth-child(1) .stat-num{color:var(--plasma);text-shadow:var(--glow-c)}
+.stat-box:nth-child(2) .stat-num{color:var(--hot);text-shadow:var(--glow-h)}
+.stat-box:nth-child(3) .stat-num{color:var(--charge);text-shadow:var(--glow-y)}
+.stat-box:nth-child(4) .stat-num{color:var(--plasma);text-shadow:var(--glow-c)}
+.stat-lbl{font-family:'Orbitron',sans-serif;font-size:9px;font-weight:600;letter-spacing:3px;color:rgba(255,255,255,.4);text-transform:uppercase}
+
+/* ── CONSOLES ───────────────────────── */
+#consoles{background:var(--void)}
+.cons-hd{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:48px}
+.cons-hd-r{font-size:12px;color:rgba(255,255,255,.35);text-align:right;line-height:1.8}
+.cons-hd-r a{color:var(--plasma);text-decoration:none}
+.cons-hd-r a:hover{text-shadow:var(--glow-c)}
+
+.cons-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:10px}
+.cons-badge{border:1px solid rgba(0,240,255,.12);background:rgba(26,0,51,.4);padding:14px 10px;text-align:center;transition:all .25s;cursor:default}
+.cons-badge:hover{transform:scale(1.04)}
+.cons-badge:nth-child(3n+1):hover{border-color:var(--plasma);background:rgba(0,240,255,.06)}
+.cons-badge:nth-child(3n+2):hover{border-color:var(--hot);background:rgba(255,0,127,.06)}
+.cons-badge:nth-child(3n+3):hover{border-color:var(--charge);background:rgba(255,238,0,.06)}
+.cons-era{font-family:'Orbitron',sans-serif;font-size:7px;letter-spacing:2px;color:rgba(255,255,255,.25);margin-bottom:5px}
+.cons-name{font-family:'Press Start 2P',monospace;font-size:8px;line-height:1.5;color:rgba(255,255,255,.7)}
+.cons-badge:nth-child(3n+1):hover .cons-name{color:var(--plasma);text-shadow:0 0 8px rgba(0,240,255,.5)}
+.cons-badge:nth-child(3n+2):hover .cons-name{color:var(--hot);text-shadow:0 0 8px rgba(255,0,127,.5)}
+.cons-badge:nth-child(3n+3):hover .cons-name{color:var(--charge);text-shadow:0 0 8px rgba(255,238,0,.5)}
+
+/* ── PROCESS ────────────────────────── */
+#process{background:var(--deep)}
+.proc-row{display:grid;grid-template-columns:repeat(4,1fr);position:relative;margin-top:56px}
+.proc-row::before{content:'';position:absolute;top:28px;left:12.5%;right:12.5%;height:2px;background:linear-gradient(90deg,var(--plasma),var(--hot),var(--charge),var(--plasma));z-index:0}
+.proc-step{text-align:center;padding:0 24px;position:relative;z-index:1}
+.proc-num{width:56px;height:56px;border:2px solid;font-family:'Press Start 2P',monospace;font-size:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 24px;background:var(--deep)}
+.proc-step:nth-child(1) .proc-num{border-color:var(--plasma);color:var(--plasma);box-shadow:var(--glow-c)}
+.proc-step:nth-child(2) .proc-num{border-color:var(--hot);color:var(--hot);box-shadow:var(--glow-h)}
+.proc-step:nth-child(3) .proc-num{border-color:var(--charge);color:var(--charge);box-shadow:var(--glow-y)}
+.proc-step:nth-child(4) .proc-num{border-color:var(--plasma);color:var(--plasma);box-shadow:var(--glow-c)}
+.proc-title{font-family:'Press Start 2P',monospace;font-size:9px;line-height:1.7;margin-bottom:12px}
+.proc-desc{font-size:12px;color:rgba(255,255,255,.5);line-height:1.85}
+
+/* ── TESTIMONIALS ───────────────────── */
+#testimonials{background:var(--void)}
+.test-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.test-card{background:#07001a;border:2px solid;overflow:hidden;transition:all .3s}
+.test-card:nth-child(1){border-color:rgba(0,240,255,.22)}
+.test-card:nth-child(2){border-color:rgba(255,0,127,.22)}
+.test-card:nth-child(3){border-color:rgba(255,238,0,.22)}
+.test-card:nth-child(1):hover{border-color:var(--plasma);box-shadow:0 0 30px rgba(0,240,255,.1)}
+.test-card:nth-child(2):hover{border-color:var(--hot);box-shadow:0 0 30px rgba(255,0,127,.1)}
+.test-card:nth-child(3):hover{border-color:var(--charge);box-shadow:0 0 30px rgba(255,238,0,.1)}
+
+.dialog-bar{padding:9px 16px;border-bottom:1px solid rgba(255,255,255,.05);display:flex;align-items:center;gap:8px}
+.test-card:nth-child(1) .dialog-bar{background:rgba(0,240,255,.07)}
+.test-card:nth-child(2) .dialog-bar{background:rgba(255,0,127,.07)}
+.test-card:nth-child(3) .dialog-bar{background:rgba(255,238,0,.07)}
+.dialog-dot{width:7px;height:7px;border-radius:50%}
+.test-card:nth-child(1) .dialog-dot{background:var(--plasma)}
+.test-card:nth-child(2) .dialog-dot{background:var(--hot)}
+.test-card:nth-child(3) .dialog-dot{background:var(--charge)}
+.dialog-lbl{font-family:'Orbitron',sans-serif;font-size:8px;font-weight:700;letter-spacing:2px;color:rgba(255,255,255,.38);text-transform:uppercase}
+
+.dialog-body{padding:24px}
+.dialog-stars{font-size:13px;letter-spacing:3px;margin-bottom:14px}
+.test-card:nth-child(1) .dialog-stars{color:var(--plasma);text-shadow:var(--glow-c)}
+.test-card:nth-child(2) .dialog-stars{color:var(--hot);text-shadow:var(--glow-h)}
+.test-card:nth-child(3) .dialog-stars{color:var(--charge);text-shadow:var(--glow-y)}
+.dialog-quote{font-size:13px;color:rgba(255,255,255,.75);line-height:2;font-style:italic;margin-bottom:22px}
+.dialog-quote::before{content:'"';font-size:18px}.dialog-quote::after{content:'"';font-size:18px}
+.test-card:nth-child(1) .dialog-quote::before,.test-card:nth-child(1) .dialog-quote::after{color:var(--plasma)}
+.test-card:nth-child(2) .dialog-quote::before,.test-card:nth-child(2) .dialog-quote::after{color:var(--hot)}
+.test-card:nth-child(3) .dialog-quote::before,.test-card:nth-child(3) .dialog-quote::after{color:var(--charge)}
+.dialog-player{display:flex;align-items:center;gap:12px;padding-top:16px;border-top:1px solid rgba(255,255,255,.07)}
+.player-av{width:38px;height:38px;border:2px solid;display:grid;place-items:center;flex-shrink:0;font-family:'Press Start 2P',monospace;font-size:12px}
+.test-card:nth-child(1) .player-av{border-color:var(--plasma);color:var(--plasma)}
+.test-card:nth-child(2) .player-av{border-color:var(--hot);color:var(--hot)}
+.test-card:nth-child(3) .player-av{border-color:var(--charge);color:var(--charge)}
+.player-name{font-family:'Orbitron',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;margin-bottom:3px}
+.player-tag{font-size:11px;color:rgba(255,255,255,.35)}
+
+/* ── CONTACT ────────────────────────── */
+#contact{background:var(--void);text-align:center;position:relative;overflow:hidden;padding:120px 60px}
+#contact::before{content:'';position:absolute;top:-150px;left:50%;width:700px;height:700px;background:radial-gradient(circle,rgba(255,0,127,.07) 0%,transparent 55%);transform:translateX(-50%)}
+#contact::after{content:'';position:absolute;bottom:-200px;left:50%;width:600px;height:600px;background:radial-gradient(circle,rgba(0,240,255,.05) 0%,transparent 55%);transform:translateX(-50%)}
+.contact-inner{max-width:680px;margin:0 auto;position:relative;z-index:1}
+
+.contact-signal{font-family:'Press Start 2P',monospace;font-size:10px;color:var(--hot);text-shadow:var(--glow-h);margin-bottom:22px;display:flex;justify-content:center;align-items:center;gap:12px}
+@keyframes pulsate{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}
+.sig-dot{width:10px;height:10px;border-radius:50%;background:var(--hot);box-shadow:var(--glow-h);animation:pulsate 1.2s ease-in-out infinite}
+.sig-dot:last-child{animation-delay:.6s}
+
+.contact-title{font-family:'Press Start 2P',monospace;font-size:clamp(18px,3vw,36px);line-height:1.6;margin-bottom:22px}
+.contact-title span{color:var(--charge);text-shadow:var(--glow-y)}
+.contact-sub{font-size:14px;color:rgba(255,255,255,.55);line-height:1.9;margin-bottom:50px;max-width:540px;margin-left:auto;margin-right:auto}
+
+.contact-btns{display:flex;justify-content:center;gap:20px;flex-wrap:wrap;margin-bottom:60px}
+.btn-big{font-family:'Press Start 2P',monospace;font-size:10px;padding:18px 32px;text-decoration:none;clip-path:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,12px 100%,0 calc(100% - 12px));display:inline-block;transition:all .2s;letter-spacing:1px}
+.btn-big.primary{color:var(--void);background:var(--hot);box-shadow:var(--glow-h)}
+.btn-big.primary:hover{background:var(--plasma);box-shadow:var(--glow-c)}
+.btn-big.outline{color:var(--plasma);background:transparent;border:2px solid var(--plasma);box-shadow:var(--glow-c)}
+.btn-big.outline:hover{background:rgba(0,240,255,.08)}
+
+.contact-facts{display:flex;justify-content:center;gap:56px;flex-wrap:wrap;padding-top:40px;border-top:1px solid rgba(255,255,255,.07)}
+.fact{text-align:center}
+.fact-lbl{font-family:'Orbitron',sans-serif;font-size:8px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.28);margin-bottom:8px}
+.fact-val{font-size:14px;color:rgba(255,255,255,.85)}
+
+/* ── FOOTER ─────────────────────────── */
+footer{background:#05000e;border-top:1px solid rgba(0,240,255,.08);padding:36px 60px;display:flex;align-items:center;justify-content:space-between}
+.footer-logo{font-family:'Press Start 2P',monospace;font-size:11px;color:var(--plasma);text-shadow:var(--glow-c);text-decoration:none}
+.footer-copy{font-size:12px;color:rgba(255,255,255,.27)}
+.footer-nav{list-style:none;display:flex;gap:28px}
+.footer-nav a{font-size:12px;color:rgba(255,255,255,.3);text-decoration:none;transition:color .2s}
+.footer-nav a:hover{color:var(--plasma)}
+
+/* ── SCROLL REVEAL ──────────────────── */
+.reveal{opacity:0;transform:translateY(22px);transition:opacity .6s ease,transform .6s ease}
+.reveal.in{opacity:1;transform:translateY(0)}
+
+/* ── RESPONSIVE ─────────────────────── */
+@media(max-width:1000px){
+  nav{padding:14px 24px}
+  .nav-links{display:none}
+  section{padding:60px 24px}
+  #contact{padding:80px 24px}
+  #stats{padding:60px 24px}
+  .hero{grid-template-columns:1fr;padding:100px 24px 60px}
+  .hero-right{display:none}
+  .svc-grid{grid-template-columns:repeat(2,1fr)}
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+  .cons-grid{grid-template-columns:repeat(3,1fr)}
+  .test-grid{grid-template-columns:1fr}
+  .proc-row{grid-template-columns:repeat(2,1fr);gap:40px}
+  .proc-row::before{display:none}
+  .cons-hd{flex-direction:column;align-items:flex-start;gap:10px}
+  footer{flex-direction:column;gap:18px;text-align:center}
+  .contact-facts{gap:28px}
+}
+@media(max-width:600px){
+  .svc-grid,.stats-grid{grid-template-columns:1fr}
+  .cons-grid{grid-template-columns:repeat(2,1fr)}
+  .proc-row{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-logo" href="#">PIXEL<br><em>MEDICS</em></a>
+  <ul class="nav-links">
+    <li><a href="#services">Services</a></li>
+    <li><a href="#consoles">Consoles</a></li>
+    <li><a href="#process">Process</a></li>
+    <li><a href="#testimonials">Reviews</a></li>
+  </ul>
+  <a class="nav-btn" href="#contact">GET A QUOTE</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-glow a"></div>
+  <div class="hero-glow b"></div>
+
+  <div class="hero-left">
+    <div class="hero-eyebrow">RETRO CONSOLE REPAIR SPECIALISTS</div>
+    <h1>
+      <span class="glitch-line c" data-text="WE REVIVE">WE REVIVE</span>
+      <span class="glitch-line h" data-text="LEGENDS.">LEGENDS.</span>
+    </h1>
+    <p class="hero-sub">Dead cartridges. Blown caps. Broken screens. Drift sticks. If it once made you feel alive — we can bring it back.</p>
+    <div class="hero-actions">
+      <a class="btn-coin" href="#contact"><span class="coin"></span>INSERT COIN TO START</a>
+      <a class="btn-ghost" href="#services">VIEW SERVICES →</a>
+    </div>
+  </div>
+
+  <div class="hero-right">
+    <div class="monitor">
+      <div class="monitor-body">
+        <div class="monitor-topbar">
+          <span class="monitor-title">PIXEL MEDICS OS v2.6</span>
+          <div class="monitor-dots">
+            <div class="mdot r"></div>
+            <div class="mdot y"></div>
+            <div class="mdot g"></div>
+          </div>
+        </div>
+        <div class="monitor-screen">
+          <div class="screen-inner" id="boot"></div>
+        </div>
+        <div class="monitor-bottombar">
+          <div class="ctrl m"></div>
+          <div class="ctrl y"></div>
+          <div class="ctrl c"></div>
+        </div>
+      </div>
+      <div class="monitor-neck"></div>
+      <div class="monitor-base"></div>
+    </div>
+  </div>
+
+  <!-- Floating pixel art: NES controller -->
+  <div class="pfloat a">
+    <svg width="88" height="66" viewBox="0 0 22 16" style="image-rendering:pixelated">
+      <rect x="3" y="4" width="16" height="9" fill="#FF007F"/>
+      <rect x="5" y="7" width="3" height="1" fill="#00F0FF"/><rect x="6" y="6" width="1" height="3" fill="#00F0FF"/>
+      <rect x="14" y="7" width="1" height="1" fill="#FFEE00"/><rect x="16" y="7" width="1" height="1" fill="#00F0FF"/>
+      <rect x="15" y="6" width="1" height="1" fill="#FF007F"/><rect x="15" y="8" width="1" height="1" fill="#FFEE00"/>
+      <rect x="9" y="8" width="2" height="1" fill="rgba(255,255,255,.3)"/><rect x="12" y="8" width="1" height="1" fill="rgba(255,255,255,.3)"/>
+      <rect x="3" y="11" width="4" height="3" fill="#FF007F"/><rect x="15" y="11" width="4" height="3" fill="#FF007F"/>
+      <rect x="2" y="12" width="2" height="2" fill="#c0005e"/><rect x="18" y="12" width="2" height="2" fill="#c0005e"/>
+    </svg>
+  </div>
+  <!-- Floating pixel art: Pac-Man ghost -->
+  <div class="pfloat b">
+    <svg width="44" height="44" viewBox="0 0 11 11" style="image-rendering:pixelated">
+      <rect x="2" y="1" width="7" height="1" fill="#FFEE00"/>
+      <rect x="1" y="2" width="9" height="5" fill="#FFEE00"/>
+      <rect x="1" y="7" width="9" height="2" fill="#FFEE00"/>
+      <rect x="1" y="9" width="2" height="2" fill="#FFEE00"/><rect x="4" y="9" width="2" height="2" fill="#FFEE00"/><rect x="7" y="9" width="2" height="2" fill="#FFEE00"/>
+      <rect x="3" y="3" width="2" height="2" fill="#0B001A"/><rect x="6" y="3" width="2" height="2" fill="#0B001A"/>
+      <rect x="4" y="3" width="1" height="1" fill="#00F0FF"/><rect x="7" y="3" width="1" height="1" fill="#00F0FF"/>
+    </svg>
+  </div>
+</section>
+
+<!-- MARQUEE -->
+<div class="marquee-band">
+  <div class="marquee-track">
+    <span class="mq">NES <span class="ms">✦</span> SNES <span class="ms">✦</span> N64 <span class="ms">✦</span> GAMECUBE <span class="ms">✦</span> WII <span class="ms">✦</span> GAME BOY <span class="ms">✦</span> GBA SP <span class="ms">✦</span> SEGA GENESIS <span class="ms">✦</span> SATURN <span class="ms">✦</span> DREAMCAST <span class="ms">✦</span> ATARI 2600 <span class="ms">✦</span> JAGUAR <span class="ms">✦</span> NEO GEO <span class="ms">✦</span> PS1 <span class="ms">✦</span> PS2 <span class="ms">✦</span> PSP <span class="ms">✦</span> XBOX OG <span class="ms">✦</span> TURBOGRAFX-16 <span class="ms">✦</span> VIRTUAL BOY <span class="ms">✦</span> COMMODORE 64 <span class="ms">✦</span></span>
+    <span class="mq" aria-hidden="true">NES <span class="ms">✦</span> SNES <span class="ms">✦</span> N64 <span class="ms">✦</span> GAMECUBE <span class="ms">✦</span> WII <span class="ms">✦</span> GAME BOY <span class="ms">✦</span> GBA SP <span class="ms">✦</span> SEGA GENESIS <span class="ms">✦</span> SATURN <span class="ms">✦</span> DREAMCAST <span class="ms">✦</span> ATARI 2600 <span class="ms">✦</span> JAGUAR <span class="ms">✦</span> NEO GEO <span class="ms">✦</span> PS1 <span class="ms">✦</span> PS2 <span class="ms">✦</span> PSP <span class="ms">✦</span> XBOX OG <span class="ms">✦</span> TURBOGRAFX-16 <span class="ms">✦</span> VIRTUAL BOY <span class="ms">✦</span> COMMODORE 64 <span class="ms">✦</span></span>
+  </div>
+</div>
+
+<!-- SERVICES -->
+<section id="services">
+  <div class="s-lbl">WHAT WE FIX</div>
+  <h2 class="s-title">SELECT YOUR REPAIR QUEST</h2>
+  <p class="s-sub">From full recaps to laser lens swaps — every console is a patient we take seriously.</p>
+
+  <div class="svc-grid">
+    <div class="cart reveal">
+      <div class="cart-ridge"><div class="cart-notch"></div></div>
+      <div class="cart-body">
+        <div class="cart-sku">01 / CONSOLE</div>
+        <span class="cart-icon">🔧</span>
+        <div class="cart-name">CONSOLE SURGERY</div>
+        <p class="cart-desc">Full diagnostic + repair. Blown fuses, bad caps, video output issues, dead power supplies — we operate on all of them.</p>
+        <div class="cart-price">from <strong>$49</strong></div>
+      </div>
+      <div class="cart-strip"></div>
+    </div>
+
+    <div class="cart reveal">
+      <div class="cart-ridge"><div class="cart-notch"></div></div>
+      <div class="cart-body">
+        <div class="cart-sku">02 / CONTROLLER</div>
+        <span class="cart-icon">🕹️</span>
+        <div class="cart-name">CONTROLLER REVIVAL</div>
+        <p class="cart-desc">Mushy buttons, stick drift, broken D-pads. We restore controllers to first-play crispness using genuine-spec parts.</p>
+        <div class="cart-price">from <strong>$29</strong></div>
+      </div>
+      <div class="cart-strip"></div>
+    </div>
+
+    <div class="cart reveal">
+      <div class="cart-ridge"><div class="cart-notch"></div></div>
+      <div class="cart-body">
+        <div class="cart-sku">03 / DISPLAY</div>
+        <span class="cart-icon">📺</span>
+        <div class="cart-name">SCREEN TRANSPLANT</div>
+        <p class="cart-desc">Dead pixels, cracked LCDs, dim backlights. We perform IPS upgrades and OEM screen swaps on all handheld systems.</p>
+        <div class="cart-price">from <strong>$65</strong></div>
+      </div>
+      <div class="cart-strip"></div>
+    </div>
+
+    <div class="cart reveal">
+      <div class="cart-ridge"><div class="cart-notch"></div></div>
+      <div class="cart-body">
+        <div class="cart-sku">04 / CARTRIDGE</div>
+        <span class="cart-icon">💾</span>
+        <div class="cart-name">CART RESURRECTION</div>
+        <p class="cart-desc">Dirty contacts, corroded pins, dead save batteries. We clean, re-pin, and replace chips so your games load first try.</p>
+        <div class="cart-price">from <strong>$15</strong></div>
+      </div>
+      <div class="cart-strip"></div>
+    </div>
+  </div>
+</section>
+
+<div class="pdiv"></div>
+
+<!-- STATS -->
+<section id="stats">
+  <div class="stats-grid">
+    <div class="stat-box reveal"><span class="stat-num" data-target="2400" data-suf="+">0+</span><span class="stat-lbl">Consoles Resurrected</span></div>
+    <div class="stat-box reveal"><span class="stat-num" data-target="15" data-suf=" YRS">0 YRS</span><span class="stat-lbl">Years in the Game</span></div>
+    <div class="stat-box reveal"><span class="stat-num" data-target="98" data-suf="%">0%</span><span class="stat-lbl">Success Rate</span></div>
+    <div class="stat-box reveal"><span class="stat-num" data-target="60" data-suf="+">0+</span><span class="stat-lbl">Console Models Serviced</span></div>
+  </div>
+</section>
+
+<div class="pdiv"></div>
+
+<!-- CONSOLES -->
+<section id="consoles">
+  <div class="cons-hd">
+    <div>
+      <div class="s-lbl">PATIENT RECORDS</div>
+      <h2 class="s-title">CONSOLES WE BRING<br>BACK TO LIFE</h2>
+    </div>
+    <div class="cons-hd-r">Don't see yours?<br><a href="#contact">Ask us anyway →</a></div>
+  </div>
+
+  <div class="cons-grid">
+    <div class="cons-badge reveal"><div class="cons-era">1983</div><div class="cons-name">NES</div></div>
+    <div class="cons-badge reveal"><div class="cons-era">1990</div><div class="cons-name">SNES</div></div>
+    <div class="cons-badge reveal"><div class="cons-era">1996</div><div class="cons-name">N64</div></div>
+    <div class="cons-badge reveal"><div class="cons-era">2001</div><div class="cons-name">GAMECUBE</div></div>
+    <div class="cons-badge reveal"><div class="cons-era">2006</div><div class="cons-name">WII</div></div>
+    <div class="cons-badge reveal"><div class="cons-era">1989</div><div class="cons-name">GAME BOY</div></div>
+    <div class="cons-badge reveal"><div class="cons-era">1996</div><div class="cons-name">GB POCKET</div></div>
+    <div class="cons-badge reveal"><div class="cons-era">1998</div><div class="cons-name">GAME BOY COLOR</div></div>
+    <div class="cons-badge reveal"><div class="cons-era">2001</div><div class="cons-name">GBA</div></div>
+    <div class="cons-badge reveal"><div class="cons-era">2003</div><div class="cons-name">GBA SP</div></div>
+    <div class="cons-badge reveal"><div class="cons-era">2004</div><div class="cons-name">GAME BOY MICRO</div></div>
+    <div class="cons-badge reveal"><div class="cons-era">1986</div><div class="cons-name">MASTER SYSTEM</div></div>
+    <div class="cons-badge reveal"><div class="cons-era">1988</div><div class="cons-name">MEGA DRIVE</div></div>
+    <div class="cons-badge reveal"><div class="cons-era">1990</div><div class="cons-name">GAME GEAR</div></div>
+    <div class="cons-badge reveal"><div class="cons-era">1994</div><div class="cons-name">SATURN</div></div>
+    <div class="cons-badge reveal"><div class="cons-era">1998</div><div class="cons-name">DREAMCAST</div></div>
+    <div class="cons-badge reveal"><div class="cons-era">1994</div><div class="cons-name">PLAYSTATION</div></div>
+    <div class="cons-badge reveal"><div class="cons-era">2000</div><div class="cons-name">PS2</div></div>
+    <div class="cons-badge reveal"><div class="cons-era">2005</div><div class="cons-name">PSP</div></div>
+    <div class="cons-badge reveal"><div class="cons-era">1977</div><div class="cons-name">ATARI 2600</div></div>
+    <div class="cons-badge reveal"><div class="cons-era">1993</div><div class="cons-name">JAGUAR</div></div>
+    <div class="cons-badge reveal"><div class="cons-era">1987</div><div class="cons-name">TURBOGRAFX-16</div></div>
+    <div class="cons-badge reveal"><div class="cons-era">1990</div><div class="cons-name">NEO GEO</div></div>
+    <div class="cons-badge reveal"><div class="cons-era">1982</div><div class="cons-name">COMMODORE 64</div></div>
+    <div class="cons-badge reveal"><div class="cons-era">2001</div><div class="cons-name">XBOX OG</div></div>
+    <div class="cons-badge reveal"><div class="cons-era">1995</div><div class="cons-name">VIRTUAL BOY</div></div>
+  </div>
+</section>
+
+<!-- PROCESS -->
+<section id="process">
+  <div class="s-lbl">THE QUEST</div>
+  <h2 class="s-title">HOW THE REPAIR WORKS</h2>
+  <div class="proc-row">
+    <div class="proc-step reveal">
+      <div class="proc-num">01</div>
+      <div class="proc-title">MAIL IN YOUR PATIENT</div>
+      <p class="proc-desc">Ship or drop off your console. We handle everything with care — your childhood gear is safe with us.</p>
+    </div>
+    <div class="proc-step reveal">
+      <div class="proc-num">02</div>
+      <div class="proc-title">DIAGNOSTIC SCAN</div>
+      <p class="proc-desc">We run a full diagnostic and send a repair quote within 24 hours. No surprises, no hidden charges.</p>
+    </div>
+    <div class="proc-step reveal">
+      <div class="proc-num">03</div>
+      <div class="proc-title">REPAIR + TEST</div>
+      <p class="proc-desc">Repairs done with quality parts, tested across multiple titles before your console ever leaves the lab.</p>
+    </div>
+    <div class="proc-step reveal">
+      <div class="proc-num">04</div>
+      <div class="proc-title">GAME ON</div>
+      <p class="proc-desc">Your legend ships back with a 90-day warranty. Plug in, power up, and play like it's 1994.</p>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section id="testimonials">
+  <div class="s-lbl">PLAYER REVIEWS</div>
+  <h2 class="s-title">WHAT THE PLAYERS SAY</h2>
+  <p class="s-sub">Real repairs. Verified humans. No bots — we checked for corruption.</p>
+
+  <div class="test-grid">
+    <div class="test-card reveal">
+      <div class="dialog-bar"><div class="dialog-dot"></div><span class="dialog-lbl">PLAYER MESSAGE</span></div>
+      <div class="dialog-body">
+        <div class="dialog-stars">★ ★ ★ ★ ★</div>
+        <p class="dialog-quote">My childhood N64 sat in a box for 15 years. Pixel Medics replaced the entire cap bank and now it runs like 1998. Actual sorcery.</p>
+        <div class="dialog-player">
+          <div class="player-av">M</div>
+          <div><div class="player-name">MARCUS T.</div><div class="player-tag">N64 owner · Gamer since 1998</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="test-card reveal">
+      <div class="dialog-bar"><div class="dialog-dot"></div><span class="dialog-lbl">PLAYER MESSAGE</span></div>
+      <div class="dialog-body">
+        <div class="dialog-stars">★ ★ ★ ★ ★</div>
+        <p class="dialog-quote">Replaced the laser on my Dreamcast AND recapped the PSU. Two weeks later it's still spinning discs perfectly. These people are the real endgame.</p>
+        <div class="dialog-player">
+          <div class="player-av">J</div>
+          <div><div class="player-name">JENNIFER K.</div><div class="player-tag">Dreamcast collector · Since 1999</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="test-card reveal">
+      <div class="dialog-bar"><div class="dialog-dot"></div><span class="dialog-lbl">PLAYER MESSAGE</span></div>
+      <div class="dialog-body">
+        <div class="dialog-stars">★ ★ ★ ★ ★</div>
+        <p class="dialog-quote">IPS screen upgrade on my GBA SP. The display is absolutely unreal — I never knew it could look this good. Communicated every step. 10/10.</p>
+        <div class="dialog-player">
+          <div class="player-av">A</div>
+          <div><div class="player-name">ALEX R.</div><div class="player-tag">GBA collector · Portable gamer</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact">
+  <div class="contact-inner">
+    <div class="contact-signal">
+      <div class="sig-dot"></div>
+      NOW ACCEPTING PATIENTS
+      <div class="sig-dot"></div>
+    </div>
+    <h2 class="contact-title">READY TO SAVE YOUR <span>LEGEND</span>?</h2>
+    <p class="contact-sub">Get a free repair quote in 24 hours. Describe your broken hero and we'll tell you exactly what it takes to bring them back.</p>
+    <div class="contact-btns">
+      <a class="btn-big primary" href="mailto:repair@pixelmedics.com">⚡ START A REPAIR</a>
+      <a class="btn-big outline" href="tel:+15551985000">📞 CALL US</a>
+    </div>
+    <div class="contact-facts">
+      <div class="fact"><div class="fact-lbl">Email</div><div class="fact-val">repair@pixelmedics.com</div></div>
+      <div class="fact"><div class="fact-lbl">Phone</div><div class="fact-val">(555) 198-5000</div></div>
+      <div class="fact"><div class="fact-lbl">Turnaround</div><div class="fact-val">5–10 Business Days</div></div>
+      <div class="fact"><div class="fact-lbl">Warranty</div><div class="fact-val">90 Days, No Blinking</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <a class="footer-logo" href="#">PIXEL MEDICS</a>
+  <span class="footer-copy">© 1985–2026 Pixel Medics. All rights reserved. All consoles respected.</span>
+  <ul class="footer-nav">
+    <li><a href="#">Privacy</a></li>
+    <li><a href="#">Warranty</a></li>
+    <li><a href="#">Shipping</a></li>
+  </ul>
+</footer>
+
+<script>
+// ── CRT Boot Sequence ─────────────────────────────────────
+const bootLines = [
+  {t:'PIXEL MEDICS OS v2.6',c:'y'},
+  {t:'(c) 1985-2026 Pixel Corp.',c:'d'},
+  {t:'',c:''},
+  {t:'> Booting repair systems...',c:''},
+  {t:'[OK] Solder station: READY',c:''},
+  {t:'[OK] Cap kit: LOADED',c:''},
+  {t:'[OK] Laser bench: CALIBRATED',c:''},
+  {t:'[OK] IPS kit: STOCKED',c:''},
+  {t:'',c:''},
+  {t:'> Scanning patient queue...',c:''},
+  {t:'   N64............RECAP NEEDED',c:'p'},
+  {t:'   DREAMCAST......LASER DEAD',c:'p'},
+  {t:'   GBA SP.........SCREEN FAILED',c:'p'},
+  {t:'   SNES...........$SAVE BATTERY',c:'p'},
+  {t:'',c:''},
+  {t:'> ALL WILL BE FIXED.',c:'y'},
+  {t:'> LOADING LEGENDS....',c:'w'},
+];
+
+const bootEl = document.getElementById('boot');
+let li = 0, ci = 0;
+function type() {
+  if (li >= bootLines.length) {
+    const cur = document.createElement('span');
+    cur.className = 'sc'; bootEl.appendChild(cur); return;
+  }
+  const line = bootLines[li];
+  if (ci === 0) {
+    const d = document.createElement('div');
+    d.className = 'sl' + (line.c ? ' ' + line.c : '');
+    d.id = 'cl'; bootEl.appendChild(d);
+  }
+  const el = document.getElementById('cl');
+  if (ci < line.t.length) {
+    el.textContent += line.t[ci++];
+    setTimeout(type, line.t.length > 0 ? 28 : 0);
+  } else {
+    el.removeAttribute('id'); ci = 0; li++;
+    setTimeout(type, li >= bootLines.length ? 0 : 130);
+  }
+}
+setTimeout(type, 900);
+
+// ── Counter Animation ─────────────────────────────────────
+function countUp(el, target, suffix) {
+  const dur = 2000, step = target / (dur / 16);
+  let cur = 0;
+  const iv = setInterval(() => {
+    cur = Math.min(cur + step, target);
+    const n = target >= 1000 ? Math.floor(cur).toLocaleString() : Math.floor(cur);
+    el.textContent = n + suffix;
+    if (cur >= target) clearInterval(iv);
+  }, 16);
+}
+
+new IntersectionObserver((entries, obs) => {
+  entries.forEach(e => {
+    if (!e.isIntersecting) return;
+    e.target.querySelectorAll('[data-target]').forEach(el => {
+      countUp(el, +el.dataset.target, el.dataset.suf || '+');
+    });
+    obs.unobserve(e.target);
+  });
+}, {threshold: 0.3}).observe(document.getElementById('stats'));
+
+// ── Scroll Reveal ─────────────────────────────────────────
+const obs = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('in'); obs.unobserve(e.target); }
+  });
+}, {threshold: 0.08, rootMargin: '0px 0px -24px 0px'});
+
+document.querySelectorAll('.reveal').forEach((el, i) => {
+  el.style.transitionDelay = (i % 6) * 0.07 + 's';
+  obs.observe(el);
+});
+
+// ── Nav border on scroll ──────────────────────────────────
+window.addEventListener('scroll', () => {
+  document.querySelector('nav').style.borderBottomColor =
+    window.scrollY > 60 ? 'rgba(0,240,255,.18)' : 'rgba(0,240,255,.08)';
+}, {passive: true});
+</script>
+</body>
+</html>
